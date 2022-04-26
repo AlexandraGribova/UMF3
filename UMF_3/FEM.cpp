@@ -126,7 +126,8 @@ private:
     }
 
 
-    void b_vector_assembly(Grid& grid) {
+    void b_vector_assembly_sin(Grid& grid) {
+        int l;
         int nx = grid.getNx(), ny = grid.getNy();
         double hx, hy;
         double x1, x2, y1, y2;
@@ -139,22 +140,52 @@ private:
             y1 = grid.getY(j);
             hy = y2 - y1;
             for (int i = 0; i < nx - 1; i++) {
+                l = j * nx + i;
                 x2 = grid.getX(i + 1);
                 x1 = grid.getX(i);
                 hx = x2 - x1;
-                f1 = grid.f(wi, x1, y1);
-                f2 = grid.f(wi, x2, y1);
-                f3 = grid.f(wi, x1, y2);
-                f4 = grid.f(wi, x2, y2);
+                f1 = grid.fs(wi, x1, y1);
+                f2 = grid.fs(wi, x2, y1);
+                f3 = grid.fs(wi, x1, y2);
+                f4 = grid.fs(wi, x2, y2);
                 wi = grid.inSubArea(i, j);
                 g = hx * hy;
                 for (int i = 0; i < 4; i++)
-                    b[i] += g * (C[i][0] * f1 + C[i][1] * f2 + C[i][2] * f3 + C[i][3] * f4);
+                    b[2 * l] += g * (C[i][0] * f1 + C[i][1] * f2 + C[i][2] * f3 + C[i][3] * f4);
             }
         }
     }
 
-   
+
+    void b_vector_assembly_cos(Grid& grid) {
+        int l;
+        int nx = grid.getNx(), ny = grid.getNy();
+        double hx, hy;
+        double x1, x2, y1, y2;
+        double f1, f2, f3, f4;
+        double g;
+        int wi;
+        for (int j = 0; j < ny - 1; j++)
+        {
+            y2 = grid.getY(j + 1);
+            y1 = grid.getY(j);
+            hy = y2 - y1;
+            for (int i = 0; i < nx - 1; i++) {
+                l = j * nx + i;
+                x2 = grid.getX(i + 1);
+                x1 = grid.getX(i);
+                hx = x2 - x1;
+                f1 = grid.fc(wi, x1, y1);
+                f2 = grid.fc(wi, x2, y1);
+                f3 = grid.fc(wi, x1, y2);
+                f4 = grid.fc(wi, x2, y2);
+                wi = grid.inSubArea(i, j);
+                g = hx * hy;
+                for (int i = 0; i < 4; i++)
+                    b[2 * l + 1] += g * (C[i][0] * f1 + C[i][1] * f2 + C[i][2] * f3 + C[i][3] * f4);
+            }
+        }
+    }
 
     void boundary_condition(Grid& grid, double t2) {
         double u1_ = u1(t2);
