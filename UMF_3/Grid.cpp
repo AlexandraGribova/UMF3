@@ -157,4 +157,6 @@ public:
     double getY(int i) { return Y[i]; }
     int getNx() { return Nx; }
     int getNy() { return Ny; }
+
+   int global_num(int i, int j) { return j * Nx + i; }
 };

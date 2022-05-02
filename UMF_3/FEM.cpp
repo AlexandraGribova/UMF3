@@ -2,17 +2,19 @@
 #include "Grid.cpp"
 #include <iostream>
 #include <iomanip>
+#include<algorithm>
 class FEM
 {
 public:
         FEM(Grid& grid) {
         n = grid.getNx() * grid.getNy();
-        q.resize(2*n);
-       
+        q.resize(2*n);       
         b.resize(2*n);
-        L.resize(2*n - 1);
+       /* L.resize(2*n - 1);
         D.resize(2*n);
-        U.resize(2*n - 1);
+        U.resize(2*n - 1);*/
+        generate_portrait(grid);
+
     }
 
    
@@ -24,6 +26,12 @@ public:
     }
 
 private:
+    int n_jgg;            // Размерность векторов gg и jg
+    // Матрица A--------------
+    std::vector <double> di;
+    std::vector <double> gu, gl;//????
+    std::vector <int> ig;
+    std::vector <int> jg;
     vector <vector <double>> G = { {0, 0, 0, 0},
                                    {0, 0, 0, 0},
                                    {0, 0, 0, 0} ,
@@ -176,5 +184,115 @@ private:
         for (int i = 0; i < n; i++)
             norm += v[i] * v[i];
         return sqrt(norm);
+    }
+
+
+    void generate_portrait(Grid &grid) {
+
+        std::vector <std::vector <int>> list(n);
+        list[0].push_back(0);
+        int g1, g2;  // Глобальные номера базисных функций
+        bool not_in;
+        // Цикл по конечным элементам
+        for (int j = 0; j < grid.getNy() - 1; j++)
+            for (int i = 0; i < grid.getNx() - 1; i++) {
+                L[0] = grid.global_num(i, j);
+                L[1] = grid.global_num(i + 1, j);
+                L[2] = grid.global_num(i, j + 1);
+                L[3] = grid.global_num(i + 1, j + 1);
+                // Цикл по ненулевым базисным функциям
+                for (int in = 0; in < 4; in++) {
+                    g1 = L[in];
+                    for (int jn = in + 1; jn < 4; jn++) {
+                        // g2 > g1
+                        g2 = L[jn];
+                        // Перед добавлением проверяем наличие элемента в списке
+                        not_in = true;
+                        for (int l = 0; l < list[g2].size() && not_in; l++)
+                            if (g1 == list[g2][l])
+                                not_in = false;
+
+                        // Добавляем
+                        if (not_in)
+                            list[g2].push_back(g1);
+                    }
+                }
+            }
+
+
+        // Сортировка списков по возрастанию
+        for (int i = 0; i < n; i++)
+            sort(list[i].begin(), list[i].end());
+
+        // Формирование вектора ig
+        ig.resize(2*n + 1);
+        ig[0] = 0;
+        for (int i = 0; i < list.size(); i++)
+            ig[i + 1] = ig[i] + list[i].size();
+
+        for (int i = 1; i < n + 1; i++)
+            ig[i] -= 1;
+
+        n_jgg = ig[2*n];
+        jg.resize(n_jgg);
+        gl.resize(n_jgg);
+        gu.resize(n_jgg);
+        di.resize(2*n);
+
+        // Формирование вектора jg
+        for (int i = 1, j = 0; i < n; i++)
+            for (int k = 0; k < list[i].size(); k++, j++)
+                jg[j] = list[i][k];
+    }
+
+    //
+
+    void add_local_matrix(std::vector<std::vector <double>>& local_matrix, int ix, int jy, Grid grid) {
+        int ibeg, iend, med;
+        int k = 4;
+        L[0] = grid.global_num(ix, jy);//глобальные номера узлов на каждом КЭ 
+        L[1] = grid.global_num(ix + 1, jy);
+        L[2] = grid.global_num(ix, jy + 1);
+        L[3] = grid.global_num(ix + 1, jy + 1);
+
+        for (int i = 0; i < k; i++)
+        {
+
+            di[2*L[i]] +=local_matrix[i][i];
+            di[2*L[i]+1] +=local_matrix[i][i];
+        }
+
+        for (int i = 0; i < k; i++) {//построене для p
+            ibeg = ig[2*L[i]];
+            for (int j = 0; j <= i - 1; j++) {
+                iend = ig[2*L[i] + 1] - 1;
+                while (jg[ibeg] != L[j]) {
+                    med = (ibeg + iend) / 2;
+                    if (jg[med] < L[j])
+                        ibeg = med + 1;
+                    else
+                        iend = med;
+                }
+                gl[ibeg] += local_matrix[i][j];
+                gu[ibeg] += local_matrix[j][i];
+                ibeg++;
+            }
+            /*
+            ibeg = ig[2 * L[i]+1];
+            for (int j = 0; j <= i - 1; j++) {
+                iend = ig[2 * L[i] + 2] - 1;
+                while (jg[ibeg] != L[j]+1) {
+                    med = (ibeg + iend) / 2;
+                    if (jg[med] < L[j]+1)
+                        ibeg = med + 1;
+                    else
+                        iend = med;
+                }
+                gl[ibeg] = local_matrix[i][j];
+                gu[ibeg] = local_matrix[j][i];
+                ibeg++;
+            }*/
+        }
+
     }
 };
