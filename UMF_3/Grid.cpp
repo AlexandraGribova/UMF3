@@ -1,162 +1,337 @@
-﻿#pragma once
-#include <fstream>
-#include<iostream>
-#include <vector>
+#pragma once
+#include "Grid.cpp"
+#include "Functi.h"
+#include <iostream>
 #include <iomanip>
-using namespace std;
-
-
-struct sub_area {
-    int nx1; 
-    int ny1;
-    int nx2;  
-    int ny2;
-    int ni; 
-};
-
-
-class Area
+#include<algorithm>
+class FEM :Functi_1
 {
-protected: 
-    int nw;  
-    vector <double> Xw, Yw;  //координаты подобластей
-    vector <sub_area> Mw;  
-    void read_area() {  
-        ifstream area_file;
-        area_file.open("Area.txt");
-        area_file >> nw;
-        Xw.resize(nw + 1);
-        Yw.resize(nw + 1);
-        Mw.resize(nw);
-        for (int i = 0; i < nw + 1; i++)
-            area_file >> Xw[i]>> Yw[i];
-        for (int i = 0; i < nw; i++) {
-            area_file >> Mw[i].ni >> Mw[i].nx1 >> Mw[i].ny1 >> Mw[i].nx2 >> Mw[i].ny2;
-            Mw[i].nx1 -= 1;
-            Mw[i].nx2 -= 1;
-            Mw[i].ny1 -= 1;
-            Mw[i].ny2 -= 1;
-        }
-        area_file.close();
-    }
-};
-class Grid : public Area
-{
-private:
-    vector <double> X, Y;  
-    vector <int> IXw, IYw;  
-    vector <int> nx, ny;  
-    vector <double> qx, qy;  
-    int Nx, Ny; 
-
-    void read_grid() {
-        ifstream GridX, GridY;
-        GridX.open("GridX.txt");
-        GridY.open("GridY.txt");
-        nx.resize(nw);
-        ny.resize(nw);
-        qx.resize(nw);
-        qy.resize(nw);
-        for (int i = 0; i < nw; i++) {
-            GridX >> nx[i] >> qx[i];
-        }
-        for (int i = 0; i < nw; i++) {
-            GridY >> ny[i] >> qy[i];
-        }
-        GridX.close();
-        GridY.close();
-        
-    }
-
-
-    void makeGrid(vector <double>& XY, double left, double right, int n, double qxy, int& i0, vector <int>& IXYw) {
-        double h0;
-        static int j = 0;
-        if (qxy - 1 < 1E-16)
-            h0 = (right - left) / n;
-        else
-            h0 = (right - left) * (1 - qxy) / (1 - pow(qxy, n));
-
-        XY[i0] = left;
-        IXYw[j] = i0; j++;
-        for (int i = i0 + 1; i < n + i0; i++) {
-            XY[i] = XY[i - 1] + h0;
-            h0 *= qxy;
-        }
-        i0 = n + i0;
-    };
-
-
 public:
-    Grid() {   
-        read_area();
-        read_grid();
-        Nx = 0;
-        Ny = 0;
-        for (int i = 0; i < nw; i++)
+    FEM(Grid& grid) {
+        n = grid.getNx() * grid.getNy();
+        q.resize(2 * n);
+        b.resize(2 * n);
+        L.resize(4);
+        /* L.resize(2*n - 1);
+         D.resize(2*n);
+         U.resize(2*n - 1);*/
+        generate_portrait(grid);
+        G_matrix_assembly(grid);
+        M_matrix_assembly(grid, 1);
+    }
+
+
+    void print_vector(ofstream& fout, double t2) {
+        fout << "t = " << t2 << endl;
+        for (int i = 0; i < n; i++)
+            fout << setprecision(19) << std::scientific << q[i] << endl;
+        fout << "-----------------------" << endl;
+    }
+
+private:
+    int n_jgg;            // Размерность векторов gg и jg
+    // Матрица A--------------
+    std::vector <double> di;
+    std::vector <double> gu, gl;//????
+    std::vector <int> ig;
+    std::vector <int> jg;
+    vector <vector <double>> G = { {0, 0, 0, 0},
+                                   {0, 0, 0, 0},
+                                   {0, 0, 0, 0} ,
+                                   {0, 0, 0, 0} };
+    vector <vector<double>> G1 = { {2 / 6., -2 / 6., 1 / 6., -1 / 6.},
+                                   {-2 / 6., 2 / 6., -1 / 6., 1 / 6.},
+                                   {1 / 6., -1 / 6., 2 / 6., -2 / 6.},
+                                   {-1 / 6., 1 / 6., -2 / 6., 2 / 6.} };
+
+    vector <vector<double>> G2 = { {2 / 6., 1 / 6., -2 / 6., -1 / 6.},
+                                   {1 / 6., 2 / 6., -1 / 6., -2 / 6.},
+                                   {-2 / 6., -1 / 6., 2 / 6., 1 / 6.},
+                                   {-1 / 6., -2 / 6., 1 / 6., 2 / 6.} };
+
+    vector <vector <double>> M = { {0, 0, 0, 0},
+                                   {0, 0, 0, 0},
+                                   {0, 0, 0, 0} ,
+                                   {0, 0, 0, 0} };
+
+    vector <vector<double>> C = { {4 / 36., 2 / 36., 2 / 36., 1 / 36.},
+                                   {2 / 36., 4 / 36., 1 / 36., 2 / 36.},
+                                   {2 / 36., 1 / 36., 4 / 36., 2 / 36.},
+                                   {1 / 36., 2 / 36., 2 / 36., 4 / 36.} };
+
+    int n;
+    double eps = 1E-13;
+    vector <double> q;
+    vector <double> b;
+    vector <int> L;
+    vector <double> U;
+    vector <double> D;
+
+
+    // Óìíîæåíèå ãëîáàëüíîé ìàòðèöû{l, d, r} íà âåêòîð q, ðåçóëüòàò â product
+    void multMatrVect() {
+
+    }
+
+
+    void G_matrix_assembly(Grid& grid) {
+        double lambd;
+        int nx = grid.getNx(), ny = grid.getNy();
+        double hx, hy;
+        double x1, x2, y1, y2;
+        double g1, g2;
+        int wi;
+        for (int j = 0; j < ny - 1; j++)
         {
-            Nx += nx[i];
-            Ny += ny[i];
+            y2 = grid.getY(j + 1);
+            y1 = grid.getY(j);
+            hy = y2 - y1;
+            for (int i = 0; i < nx - 1; i++)
+            {
+                x2 = grid.getX(i + 1);
+                x1 = grid.getX(i);
+                hx = x2 - x1;
+                wi = grid.inSubArea(i, j);
+                lambd = lambda(wi);
+                g1 = lambd * hy / hx;
+                g2 = lambd * hx / hy;
+                for (int i = 0; i < 4; i++)
+                    for (int j = 0; j < 4; j++)
+                        G[i][j] = g1 * G1[i][j] + g2 * G2[i][j];
+                add_local_matrix_p(G, i, j, grid);////
+            }
         }
-        Nx++; Ny++;
-        X.resize(Nx);
-        Y.resize(Ny);
-        IXw.resize(nw + 1);
-        IYw.resize(nw + 1);
-        int ix0 = 0, iy0=0;
 
-        for (int i = 0; i < nw; i++)
+    }
+
+
+    void M_matrix_assembly(Grid& grid, double m) {
+        int nx = grid.getNx(), ny = grid.getNy();
+        double hx, hy;
+        double x1, x2, y1, y2;
+        double g;
+        int wi;
+        for (int j = 0; j < ny - 1; j++)
         {
-            makeGrid(X, Xw[i], Xw[i + 1], nx[i], qx[i], ix0, IXw);
-            makeGrid(Y, Yw[i], Yw[i + 1], ny[i], qy[i], iy0, IYw);
-        }
-        X[Nx - 1] = Xw[nw];
-        Y[Ny - 1] = Yw[nw];
-        IXw[nw] = ix0;
-        IYw[nw] = iy0;
-    }
-
-   
-    int inSubArea(int px, int py) {
-        int ixw1, ixw2, iyw1, iyw2;
-        for (int i = 0; i < nw; i++) {
-            ixw1 = IXw[Mw[i].nx1];
-            ixw2 = IXw[Mw[i].nx2];
-            iyw1 = IYw[Mw[i].ny1];
-            iyw2 = IYw[Mw[i].ny2];
-            bool flag1, flag2;
-            flag1 = px >= ixw1 && px <= ixw2 && px + 1 >= ixw1 && px + 1 <= ixw2;
-            flag2 = py >= iyw1 && py <= iyw2 && py + 1 >= iyw1 && py + 1 <= iyw2;
-            if (flag1 && flag2)
-                return Mw[i].ni;
+            y2 = grid.getY(j + 1);
+            y1 = grid.getY(j);
+            hy = y2 - y1;
+            for (int i = 0; i < nx - 1; i++) {
+                x2 = grid.getX(i + 1);
+                x1 = grid.getX(i);
+                hx = x2 - x1;
+                wi = grid.inSubArea(i, j);
+                g = hx * hy * m;
+                for (int i = 0; i < 4; i++)
+                    for (int j = 0; j < 4; j++)
+                        M[i][j] = g * C[i][j];
+                add_local_matrix_c(M, i, j, grid);////
+            }
         }
     }
 
-    double chi(int wi) {//русская буква х
-        return 1;
+
+    void b_vector_assembly(Grid& grid) {
+        int nx = grid.getNx(), ny = grid.getNy();
+        double hx, hy;
+        double x1, x2, y1, y2;
+        double f1, f2, f3, f4;
+        double g;
+        int wi;
+        int l;
+        for (int j = 0; j < ny - 1; j++)
+        {
+            y2 = grid.getY(j + 1);
+            y1 = grid.getY(j);
+            hy = y2 - y1;
+            for (int i = 0; i < nx - 1; i++) {
+                l = j * nx + i;
+                x2 = grid.getX(i + 1);
+                x1 = grid.getX(i);
+                hx = x2 - x1;
+                wi = grid.inSubArea(i, j);
+                if (!(l % 2)) {  // если чётное
+                    f1 = fc(wi, x1, y1);
+                    f2 = fc(wi, x2, y1);
+                    f3 = fc(wi, x1, y2);
+                    f4 = fc(wi, x2, y2);
+                }
+                else {
+                    f1 = fs(wi, x1, y1);
+                    f2 = fs(wi, x2, y1);
+                    f3 = fs(wi, x1, y2);
+                    f4 = fs(wi, x2, y2);
+                }
+                g = hx * hy;
+                for (int i = 0; i < 4; i++)
+                    b[l] += g * (C[i][0] * f1 + C[i][1] * f2 + C[i][2] * f3 + C[i][3] * f4);
+            }
+        }
     }
 
-    double sigma(int wi) {
-        return 1;
-    }
 
-    double lambda(int wi) {
-        return 1;
-    }
 
-    double fs(int wi, double x, double y) {
-        return -1;
-    }
+    void boundary_condition(Grid& grid, double t2) {
 
-    double fc(int wi, double x, double y) {
-        return -1;
     }
 
 
-    double getX(int i) { return X[i]; }
-    double getY(int i) { return Y[i]; }
-    int getNx() { return Nx; }
-    int getNy() { return Ny; }
+    double vector_norm(vector <double>& v) {
+        double norm = 0;
+        for (int i = 0; i < n; i++)
+            norm += v[i] * v[i];
+        return sqrt(norm);
+    }
 
-   int global_num(int i, int j) { return j * Nx + i; }
+
+    void generate_portrait(Grid& grid) {
+
+        std::vector <std::vector <int>> list(2 * n);
+        list[0].push_back(0);
+        int g1, g2;  // Глобальные номера базисных функций
+        bool not_in;
+        // Цикл по конечным элементам
+        for (int j = 0; j < grid.getNy() - 1; j++)
+            for (int i = 0; i < grid.getNx() - 1; i++) {
+                L[0] = grid.global_num(i, j);
+                L[1] = grid.global_num(i + 1, j);
+                L[2] = grid.global_num(i, j + 1);
+                L[3] = grid.global_num(i + 1, j + 1);
+                // Цикл по ненулевым базисным функциям
+                for (int in = 0; in < 4; in++) {
+                    g1 = L[in];
+                    for (int jn = in + 1; jn < 4; jn++) {
+                        // g2 > g1
+                        g2 = L[jn];
+                        // Перед добавлением проверяем наличие элемента в списке
+                        not_in = true;
+                        for (int l = 0; l < list[g2].size() && not_in; l++)
+                            if (g1 == list[g2][l])
+                                not_in = false;
+
+                        // Добавляем
+                        if (not_in)
+                            list[g2].push_back(g1);
+                    }
+                }
+            }
+
+
+        // Сортировка списков по возрастанию
+        for (int i = 0; i < 2 * n; i++)
+            sort(list[i].begin(), list[i].end());
+
+        // Формирование вектора ig
+        ig.resize(2 * n + 1);
+        ig[0] = 0;
+        for (int i = 0; i < list.size(); i++)
+            ig[i + 1] = ig[i] + list[i].size();
+
+        for (int i = 1; i < 2 * n + 1; i++)
+            ig[i] -= 1;
+
+        n_jgg = ig[2 * n];
+        jg.resize(n_jgg);
+        gl.resize(n_jgg);
+        gu.resize(n_jgg);
+        di.resize(2 * n);
+
+        // Формирование вектора jg
+        for (int i = 1, j = 0; i < n; i++)
+            for (int k = 0; k < list[i].size(); k++, j++)
+                jg[j] = list[i][k];
+    }
+
+    //
+
+    void add_local_matrix_p(std::vector<std::vector <double>>& local_matrix, int ix, int jy, Grid &grid) {
+        int ibeg, iend, med;
+        int k = 4;
+        L[0] = grid.global_num(ix, jy);//глобальные номера узлов на каждом КЭ 
+        L[1] = grid.global_num(ix + 1, jy);
+        L[2] = grid.global_num(ix, jy + 1);
+        L[3] = grid.global_num(ix + 1, jy + 1);
+
+        for (int i = 0; i < k; i++)
+        {
+
+            di[2 * L[i]] += local_matrix[i][i];
+            di[2 * L[i] + 1] += local_matrix[i][i];
+        }
+
+        for (int i = 0; i < k; i++) {//построене для p
+            ibeg = ig[2 * L[i]];
+            for (int j = 0; j <= i - 1; j++) {
+                iend = ig[2 * L[i] + 1] - 1;
+                while (jg[ibeg] != L[j]) {
+                    med = (ibeg + iend) / 2;
+                    if (jg[med] < L[j])
+                        ibeg = med + 1;
+                    else
+                        iend = med;
+                }
+                gl[ibeg] += local_matrix[i][j];
+                gu[ibeg] += local_matrix[j][i];
+                ibeg++;
+            }
+            
+            ibeg = ig[2 * L[i]+1];
+            for (int j = 0; j <= i - 1; j++) {
+                iend = ig[2 * L[i] + 2] - 1;
+                while (jg[ibeg] != L[j]+1) {
+                    med = (ibeg + iend) / 2;
+                    if (jg[med] < L[j]+1)
+                        ibeg = med + 1;
+                    else
+                        iend = med;
+                }
+                gl[ibeg] = local_matrix[i][j];
+                gu[ibeg] = local_matrix[j][i];
+                ibeg++;
+            }
+        }
+
+    }
+
+    void add_local_matrix_c(std::vector<std::vector <double>>& local_matrix, int ix, int jy, Grid& grid) {
+        int ibeg, iend, med;
+        int k = 4;
+        L[0] = grid.global_num(ix, jy);//глобальные номера узлов на каждом КЭ 
+        L[1] = grid.global_num(ix + 1, jy);
+        L[2] = grid.global_num(ix, jy + 1);
+        L[3] = grid.global_num(ix + 1, jy + 1);
+
+        for (int i = 0; i < k; i++) {//построене для p
+            ibeg = ig[2 * L[i] + 1];
+            for (int j = 0; j <= i - 1; j++) {
+                iend = ig[2 * L[i] + 2] - 1;
+                while (jg[ibeg] != L[j] + 1) {
+                    med = (ibeg + iend) / 2;
+                    if (jg[med] < L[j] + 1)
+                        ibeg = med + 1;
+                    else
+                        iend = med;
+                }
+                gl[ibeg] += local_matrix[i][j];
+                gu[ibeg] += local_matrix[j][i];
+                ibeg++;
+            }
+
+            ibeg = ig[2 * L[i] + 2];
+            for (int j = 0; j <= i - 1; j++) {
+                iend = ig[2 * L[i] + 3] - 1;
+                while (jg[ibeg] != L[j] + 2) {
+                    med = (ibeg + iend) / 2;
+                    if (jg[med] < L[j] + 2)
+                        ibeg = med + 1;
+                    else
+                        iend = med;
+                }
+                gl[ibeg] = local_matrix[i][j];
+                gu[ibeg] = local_matrix[j][i];
+                ibeg++;
+            }
+        }
+
+    }
 };
