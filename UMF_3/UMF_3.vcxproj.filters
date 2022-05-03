@@ -24,9 +24,18 @@
     <ClCompile Include="FEM.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="Functi.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="GridX.txt" />
     <Text Include="GridY.txt" />
+    <Text Include="Area.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Functi.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

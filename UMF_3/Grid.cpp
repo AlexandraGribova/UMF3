@@ -29,7 +29,9 @@ protected:
         Yw.resize(nw + 1);
         Mw.resize(nw);
         for (int i = 0; i < nw + 1; i++)
-            area_file >> Xw[i]>> Yw[i];
+            area_file >> Xw[i];
+        for (int i = 0; i < nw + 1; i++)
+            area_file >> Yw[i];
         for (int i = 0; i < nw; i++) {
             area_file >> Mw[i].ni >> Mw[i].nx1 >> Mw[i].ny1 >> Mw[i].nx2 >> Mw[i].ny2;
             Mw[i].nx1 -= 1;
@@ -130,26 +132,6 @@ public:
             if (flag1 && flag2)
                 return Mw[i].ni;
         }
-    }
-
-    double chi(int wi) {//русская буква х
-        return 1;
-    }
-
-    double sigma(int wi) {
-        return 1;
-    }
-
-    double lambda(int wi) {
-        return 1;
-    }
-
-    double fs(int wi, double x, double y) {
-        return -1;
-    }
-
-    double fc(int wi, double x, double y) {
-        return -1;
     }
 
 
