@@ -6,6 +6,10 @@ public:
     double chi(int wi) {//русская буква х
         return 1;
     }
+    double w(int wi)
+    {
+        return 1;
+    }
 
     double sigma(int wi) {
         return 1;

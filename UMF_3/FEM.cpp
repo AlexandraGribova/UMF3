@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Grid.cpp"
+#include "Solver.h"
 #include "Functi.h"
 #include <iostream>
 #include <iomanip>
@@ -12,12 +13,13 @@ public:
         q.resize(2 * n);
         b.resize(2 * n);
         L.resize(8);
-        /* L.resize(2*n - 1);
-         D.resize(2*n);
-         U.resize(2*n - 1);*/
         generate_portrait(grid);
         G_matrix_assembly(grid);
+        M_matrix_assembly(grid, 0);
         M_matrix_assembly(grid, 1);
+        b_vector_assembly_cos(grid);
+        b_vector_assembly_sin(grid);
+        LOS_solve(q, di, gl, gu, b, ig, jg);
     }
 
 
@@ -98,14 +100,14 @@ private:
                 for (int i = 0; i < 4; i++)
                     for (int j = 0; j < 4; j++)
                         G[i][j] = g1 * G1[i][j] + g2 * G2[i][j];
-                add_local_matrix_p(G, i, j, grid);////
+                add_local_matrix_p(G, i, j, grid);
             }
         }
 
     }
 
 
-    void M_matrix_assembly(Grid& grid, double m) {
+    void M_matrix_assembly(Grid& grid, bool flag) {//flag=true -> p
         int nx = grid.getNx(), ny = grid.getNy();
         double hx, hy;
         double x1, x2, y1, y2;
@@ -121,54 +123,78 @@ private:
                 x1 = grid.getX(i);
                 hx = x2 - x1;
                 wi = grid.inSubArea(i, j);
-                g = hx * hy * m;
+                g = hx * hy;
+                if (flag) g *= -1 * w(wi) * w(wi) * chi(wi);
+                else g *= w(wi)* sigma(wi);
                 for (int i = 0; i < 4; i++)
                     for (int j = 0; j < 4; j++)
                         M[i][j] = g * C[i][j];
-                add_local_matrix_c(M, i, j, grid);////
+                if(flag) add_local_matrix_p(M, i, j, grid);
+                else  add_local_matrix_c(M, i, j, grid);
             }
         }
     }
 
-
-    void b_vector_assembly(Grid& grid) {
+    void b_vector_assembly_sin(Grid& grid) {
+        int l;
         int nx = grid.getNx(), ny = grid.getNy();
         double hx, hy;
         double x1, x2, y1, y2;
         double f1, f2, f3, f4;
         double g;
         int wi;
-        int l;
         for (int j = 0; j < ny - 1; j++)
         {
             y2 = grid.getY(j + 1);
             y1 = grid.getY(j);
             hy = y2 - y1;
             for (int i = 0; i < nx - 1; i++) {
+                wi = grid.inSubArea(i, j);
                 l = j * nx + i;
                 x2 = grid.getX(i + 1);
                 x1 = grid.getX(i);
                 hx = x2 - x1;
-                wi = grid.inSubArea(i, j);
-                if (!(l % 2)) {  // если чётное
-                    f1 = fc(wi, x1, y1);
-                    f2 = fc(wi, x2, y1);
-                    f3 = fc(wi, x1, y2);
-                    f4 = fc(wi, x2, y2);
-                }
-                else {
-                    f1 = fs(wi, x1, y1);
-                    f2 = fs(wi, x2, y1);
-                    f3 = fs(wi, x1, y2);
-                    f4 = fs(wi, x2, y2);
-                }
+                f1 = fs(wi, x1, y1);
+                f2 = fs(wi, x2, y1);
+                f3 = fs(wi, x1, y2);
+                f4 = fs(wi, x2, y2);
                 g = hx * hy;
                 for (int i = 0; i < 4; i++)
-                    b[l] += g * (C[i][0] * f1 + C[i][1] * f2 + C[i][2] * f3 + C[i][3] * f4);
+                    b[2 * l] += g * (C[i][0] * f1 + C[i][1] * f2 + C[i][2] * f3 + C[i][3] * f4);
             }
         }
     }
 
+
+    void b_vector_assembly_cos(Grid& grid) {
+        int l;
+        int nx = grid.getNx(), ny = grid.getNy();
+        double hx, hy;
+        double x1, x2, y1, y2;
+        double f1, f2, f3, f4;
+        double g;
+        int wi;
+        for (int j = 0; j < ny - 1; j++)
+        {
+            y2 = grid.getY(j + 1);
+            y1 = grid.getY(j);
+            hy = y2 - y1;
+            for (int i = 0; i < nx - 1; i++) {
+                wi = grid.inSubArea(i, j);
+                l = j * nx + i;
+                x2 = grid.getX(i + 1);
+                x1 = grid.getX(i);
+                hx = x2 - x1;
+                f1 = fc(wi, x1, y1);
+                f2 = fc(wi, x2, y1);
+                f3 = fc(wi, x1, y2);
+                f4 = fc(wi, x2, y2);
+                g = hx * hy;
+                for (int i = 0; i < 4; i++)
+                    b[2 * l + 1] += g * (C[i][0] * f1 + C[i][1] * f2 + C[i][2] * f3 + C[i][3] * f4);
+            }
+        }
+    }
 
 
     void boundary_condition(Grid& grid, double t2) {
@@ -258,7 +284,8 @@ private:
             di[2 * L[i] + 1] += local_matrix[i][i];
         }
 
-        for (int i = 0; i < k; i++) {//построене для p
+        for (int i = 0; i < k; i++)
+        {//построене для p
             ibeg = ig[2 * L[i]];
             for (int j = 0; j <= i - 1; j++) {
                 iend = ig[2 * L[i] + 1] - 1;
@@ -273,6 +300,9 @@ private:
                 gu[ibeg] += local_matrix[j][i];
                 ibeg++;
             }
+        }
+        for (int i = 0; i < k; i++)
+        {
 
             ibeg = ig[2 * L[i] + 1];
             for (int j = 0; j <= i - 1; j++) {
@@ -283,6 +313,8 @@ private:
                         ibeg = med + 1;
                     else
                         iend = med;
+                    if (ibeg == iend)
+                        cout << "1";//!!!!!
                 }
                 gl[ibeg] = local_matrix[i][j];
                 gu[ibeg] = local_matrix[j][i];
@@ -326,8 +358,8 @@ private:
                     else
                         iend = med;
                 }
-                gl[ibeg] = local_matrix[i][j];
-                gu[ibeg] = local_matrix[j][i];
+                gl[ibeg] -= local_matrix[i][j];
+                gu[ibeg] -= local_matrix[j][i];
                 ibeg++;
             }
         }

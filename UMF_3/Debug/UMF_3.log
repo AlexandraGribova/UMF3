@@ -1,13 +1,5 @@
 ﻿  FEM.cpp
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(208,43): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(228,27): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(240,31): warning C4018: <: несоответствие типов со знаком и без знака
-  Functi.cpp
-  Grid.cpp
-  UMF_3.cpp
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(208,43): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(228,27): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(240,31): warning C4018: <: несоответствие типов со знаком и без знака
-  Создание кода...
-C:\Users\sasha\source\repos\UMF_3\UMF_3\Grid.cpp(135): warning C4715: Grid::inSubArea: значение возвращается не при всех путях выполнения
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(234,43): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(254,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(266,31): warning C4018: <: несоответствие типов со знаком и без знака
   UMF_3.vcxproj -> C:\Users\sasha\source\repos\UMF_3\Debug\UMF_3.exe
