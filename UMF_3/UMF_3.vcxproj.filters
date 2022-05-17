@@ -35,6 +35,7 @@
     <Text Include="GridX.txt" />
     <Text Include="GridY.txt" />
     <Text Include="Area.txt" />
+    <Text Include="bc.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Functi.h">

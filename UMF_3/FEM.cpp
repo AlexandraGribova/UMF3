@@ -14,11 +14,13 @@ public:
         b.resize(2 * n);
         L.resize(8);
         generate_portrait(grid);
+        read_bc1();
         G_matrix_assembly(grid);
-        M_matrix_assembly(grid, 0);
         M_matrix_assembly(grid, 1);
+        M_matrix_assembly(grid, 0);
         b_vector_assembly_cos(grid);
         b_vector_assembly_sin(grid);
+        use_bc1(grid);
         LOS_solve(q, di, gl, gu, b, ig, jg);
     }
 
@@ -31,6 +33,13 @@ public:
     }
 
 private:
+    int ns1;
+    struct bc {
+        int nx1, nx2;
+        int ny1, ny2;
+        int ni;
+    };
+    vector <bc> bc1;
     int n_jgg;            // Размерность векторов gg и jg
     // Матрица A--------------
     std::vector <double> di;
@@ -70,12 +79,6 @@ private:
     vector <double> D;
 
 
-    // Óìíîæåíèå ãëîáàëüíîé ìàòðèöû{l, d, r} íà âåêòîð q, ðåçóëüòàò â product
-    void multMatrVect() {
-
-    }
-
-
     void G_matrix_assembly(Grid& grid) {
         double lambd;
         int nx = grid.getNx(), ny = grid.getNy();
@@ -97,13 +100,12 @@ private:
                 lambd = lambda(wi);
                 g1 = lambd * hy / hx;
                 g2 = lambd * hx / hy;
-                for (int i = 0; i < 4; i++)
-                    for (int j = 0; j < 4; j++)
-                        G[i][j] = g1 * G1[i][j] + g2 * G2[i][j];
+                for (int ik = 0; ik < 4; ik++)
+                    for (int jk = 0; jk < 4; jk++)
+                        G[ik][jk] = g1 * G1[ik][jk] + g2 * G2[ik][jk];
                 add_local_matrix_p(G, i, j, grid);
             }
         }
-
     }
 
 
@@ -124,12 +126,12 @@ private:
                 hx = x2 - x1;
                 wi = grid.inSubArea(i, j);
                 g = hx * hy;
-                if (flag) g *= -1 * w(wi) * w(wi) * chi(wi);
-                else g *= w(wi)* sigma(wi);
-                for (int i = 0; i < 4; i++)
-                    for (int j = 0; j < 4; j++)
-                        M[i][j] = g * C[i][j];
-                if(flag) add_local_matrix_p(M, i, j, grid);
+                if (flag) g *= -1 * w * w * chi(wi);
+                else g *= w * sigma(wi);
+                for (int ik = 0; ik < 4; ik++)
+                    for (int jk = 0; jk < 4; jk++)
+                        M[ik][jk] = g * C[ik][jk];
+                if (flag) add_local_matrix_p(M, i, j, grid);
                 else  add_local_matrix_c(M, i, j, grid);
             }
         }
@@ -150,7 +152,10 @@ private:
             hy = y2 - y1;
             for (int i = 0; i < nx - 1; i++) {
                 wi = grid.inSubArea(i, j);
-                l = j * nx + i;
+                L[0] = grid.global_num(i, j);
+                L[1] = grid.global_num(i + 1, j);
+                L[2] = grid.global_num(i, j + 1);
+                L[3] = grid.global_num(i + 1, j + 1);
                 x2 = grid.getX(i + 1);
                 x1 = grid.getX(i);
                 hx = x2 - x1;
@@ -159,15 +164,17 @@ private:
                 f3 = fs(wi, x1, y2);
                 f4 = fs(wi, x2, y2);
                 g = hx * hy;
-                for (int i = 0; i < 4; i++)
-                    b[2 * l] += g * (C[i][0] * f1 + C[i][1] * f2 + C[i][2] * f3 + C[i][3] * f4);
+                for (int ik = 0; ik < 4; ik++) {
+                    int elem = 2 * L[ik];
+                    b[elem] += g * (C[ik][0] * f1 + C[ik][1] * f2 + C[ik][2] * f3 + C[ik][3] * f4);
+                }
             }
         }
     }
 
 
     void b_vector_assembly_cos(Grid& grid) {
-        int l;
+        int l1, l2, l3, l4;
         int nx = grid.getNx(), ny = grid.getNy();
         double hx, hy;
         double x1, x2, y1, y2;
@@ -181,7 +188,10 @@ private:
             hy = y2 - y1;
             for (int i = 0; i < nx - 1; i++) {
                 wi = grid.inSubArea(i, j);
-                l = j * nx + i;
+                L[0] = grid.global_num(i, j);
+                L[1] = grid.global_num(i + 1, j);
+                L[2] = grid.global_num(i, j + 1);
+                L[3] = grid.global_num(i + 1, j + 1);
                 x2 = grid.getX(i + 1);
                 x1 = grid.getX(i);
                 hx = x2 - x1;
@@ -190,39 +200,106 @@ private:
                 f3 = fc(wi, x1, y2);
                 f4 = fc(wi, x2, y2);
                 g = hx * hy;
-                for (int i = 0; i < 4; i++)
-                    b[2 * l + 1] += g * (C[i][0] * f1 + C[i][1] * f2 + C[i][2] * f3 + C[i][3] * f4);
+                for (int ik = 0; ik < 4; ik++)
+                {
+                    int elem = 2 * L[ik]  + 1;
+                    b[elem] += g * (C[ik][0] * f1 + C[ik][1] * f2 + C[ik][2] * f3 + C[ik][3] * f4);
+                }
+            }
+        }
+    }
+
+    void read_bc1() {
+        ifstream bc_file;
+        bc_file.open("bc.txt");
+        bc_file >> ns1;
+        bc1.resize(ns1);
+        for (int i = 0; i < ns1; i++) {
+            bc_file >> bc1[i].ni >> bc1[i].nx1 >> bc1[i].nx2 >> bc1[i].ny1 >> bc1[i].ny2;
+            --bc1[i].nx1;
+            --bc1[i].nx2;
+            --bc1[i].ny1;
+            --bc1[i].ny2;
+        }
+        bc_file.close();
+    }
+
+    void use_bc1(Grid& grid) {
+        int p;
+        int i_beg, i_end, j_beg, j_end;
+        double x1, y1;
+        int l;
+        for (int s = 0; s < ns1; s++) {
+            i_beg = grid.getIXw(bc1[s].nx1);
+            i_end = grid.getIXw(bc1[s].nx2);
+            j_beg = grid.getIYw(bc1[s].ny1);
+            j_end = grid.getIYw(bc1[s].ny2);
+            p = bc1[s].ni;
+            if (i_beg == i_end) {
+                int i = i_beg;
+                x1 = grid.getX(i);
+                for (int j = j_beg; j <= j_end; j++) {
+                    y1 = grid.getY(j);
+                    l = grid.global_num(i, j);
+                    di[2 * l] = 1;
+                    for (int i = ig[2 * l]; i < ig[2 * l + 1]; i++)
+                        gl[i] = 0;
+                    for (int i = 0; i < n_jgg; i++)
+                        if (jg[i] == 2 * l)
+                            gu[i] = 0;
+
+                    di[2 * l + 1] = 1;
+                    for (int i = ig[2 * l + 1]; i < ig[2 * l + 2]; i++)
+                        gl[i] = 0;
+                    for (int i = 0; i < n_jgg; i++)
+                        if (jg[i] == 2 * l + 1)
+                            gu[i] = 0;
+                    b[2 * l] = us(p, x1, y1);
+                    b[2 * l + 1] = uc(p, x1, y1);
+                }
+            }
+            else {
+                int j = j_beg;
+                y1 = grid.getY(j);
+                for (int i = i_beg; i <= i_end; i++) {
+                    x1 = grid.getX(i);
+                    l = grid.global_num(i, j);
+
+                    di[2 * l] = 1;
+                    for (int i = ig[2 * l]; i < ig[2 * l + 1]; i++)
+                        gl[i] = 0;
+                    for (int i = 0; i < n_jgg; i++)
+                        if (jg[i] == 2 * l)
+                            gu[i] = 0;
+
+                    di[2 * l + 1] = 1;
+                    for (int i = ig[2 * l + 1]; i < ig[2 * l + 2]; i++)
+                        gl[i] = 0;
+                    for (int i = 0; i < n_jgg; i++)
+                        if (jg[i] == 2 * l + 1)
+                            gu[i] = 0;
+
+                    b[2 * l] = us(p, x1, y1);
+                    b[2 * l + 1] = uc(p, x1, y1);
+                }
             }
         }
     }
 
 
-    void boundary_condition(Grid& grid, double t2) {
-
-    }
-
-
-    double vector_norm(vector <double>& v) {
-        double norm = 0;
-        for (int i = 0; i < n; i++)
-            norm += v[i] * v[i];
-        return sqrt(norm);
-    }
-
-
     void generate_portrait(Grid& grid) {
 
-        std::vector <std::vector <int>> list(2*n);
+        std::vector <std::vector <int>> list(2 * n);
         int g1, g2;  // Глобальные номера базисных функций
         bool not_in;
         // Цикл по конечным элементам
         for (int j = 0; j < grid.getNy() - 1; j++)
-            for (int i = 0; i < grid.getNx() - 1; i++) 
+            for (int i = 0; i < grid.getNx() - 1; i++)
             {
-                L[0] = 2*grid.global_num(i, j); L[1] = 2 * grid.global_num(i, j)+1;
-                L[2] = 2*grid.global_num(i + 1, j); L[3] = 2 * grid.global_num(i + 1, j)+1;
-                L[4] = 2*grid.global_num(i, j + 1); L[5] = 2 * grid.global_num(i, j + 1)+1;
-                L[6] = 2*grid.global_num(i + 1, j + 1); L[7] = 2 * grid.global_num(i + 1, j + 1)+1;
+                L[0] = 2 * grid.global_num(i, j); L[1] = 2 * grid.global_num(i, j) + 1;
+                L[2] = 2 * grid.global_num(i + 1, j); L[3] = 2 * grid.global_num(i + 1, j) + 1;
+                L[4] = 2 * grid.global_num(i, j + 1); L[5] = 2 * grid.global_num(i, j + 1) + 1;
+                L[6] = 2 * grid.global_num(i + 1, j + 1); L[7] = 2 * grid.global_num(i + 1, j + 1) + 1;
                 // Цикл по ненулевым базисным функциям
                 for (int in = 0; in < 8; in++) {
                     g1 = L[in];
@@ -246,7 +323,7 @@ private:
 
 
         // Сортировка списков по возрастанию
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < list.size(); i++)
             sort(list[i].begin(), list[i].end());
 
         // Формирование вектора ig
@@ -286,12 +363,13 @@ private:
 
         for (int i = 0; i < k; i++)
         {//построене для p
+            int test = 2 * L[i];
             ibeg = ig[2 * L[i]];
             for (int j = 0; j <= i - 1; j++) {
                 iend = ig[2 * L[i] + 1] - 1;
-                while (jg[ibeg] != L[j]) {
+                while (jg[ibeg] != 2 * L[j]) {
                     med = (ibeg + iend) / 2;
-                    if (jg[med] < L[j])
+                    if (jg[med] < 2 * L[j])
                         ibeg = med + 1;
                     else
                         iend = med;
@@ -303,42 +381,13 @@ private:
         }
         for (int i = 0; i < k; i++)
         {
-
+            int test = 2 * L[i] + 1;
             ibeg = ig[2 * L[i] + 1];
             for (int j = 0; j <= i - 1; j++) {
                 iend = ig[2 * L[i] + 2] - 1;
-                while (jg[ibeg] != L[j] + 1) {
+                while (jg[ibeg] != 2 * L[j] + 1) {
                     med = (ibeg + iend) / 2;
-                    if (jg[med] < L[j] + 1)
-                        ibeg = med + 1;
-                    else
-                        iend = med;
-                    if (ibeg == iend)
-                        cout << "1";//!!!!!
-                }
-                gl[ibeg] = local_matrix[i][j];
-                gu[ibeg] = local_matrix[j][i];
-                ibeg++;
-            }
-        }
-
-    }
-
-    void add_local_matrix_c(std::vector<std::vector <double>>& local_matrix, int ix, int jy, Grid& grid) {
-        int ibeg, iend, med;
-        int k = 4;
-        L[0] = grid.global_num(ix, jy);//глобальные номера узлов на каждом КЭ 
-        L[1] = grid.global_num(ix + 1, jy);
-        L[2] = grid.global_num(ix, jy + 1);
-        L[3] = grid.global_num(ix + 1, jy + 1);
-
-        for (int i = 0; i < k; i++) {//построене для p
-            ibeg = ig[2 * L[i] + 1];
-            for (int j = 0; j <= i - 1; j++) {
-                iend = ig[2 * L[i] + 2] - 1;
-                while (jg[ibeg] != L[j] + 1) {
-                    med = (ibeg + iend) / 2;
-                    if (jg[med] < L[j] + 1)
+                    if (jg[med] < 2 * L[j] + 1)
                         ibeg = med + 1;
                     else
                         iend = med;
@@ -347,22 +396,67 @@ private:
                 gu[ibeg] += local_matrix[j][i];
                 ibeg++;
             }
+        }
 
-            ibeg = ig[2 * L[i] + 2];
+    }
+
+    void add_local_matrix_c(std::vector<std::vector <double>>& local_matrix, int ix, int jy, Grid& grid) {
+        int sign = 1;
+        int ibeg, iend, med;
+        int k = 4;
+        L[0] = grid.global_num(ix, jy);//глобальные номера узлов на каждом КЭ 
+        L[1] = grid.global_num(ix + 1, jy);
+        L[2] = grid.global_num(ix, jy + 1);
+        L[3] = grid.global_num(ix + 1, jy + 1);
+
+        for (int i = 0; i < k; i++) {
+            ibeg = ig[2 * L[i] + 1];
+            iend = ig[2 * L[i] + 2] - 1;
+            while (jg[ibeg] != 2 * L[i]) {
+                med = (ibeg + iend) / 2;
+                if (jg[med] < 2 * L[i])
+                    ibeg = med + 1;
+                else
+                    iend = med;
+            }
+            gl[ibeg] += sign * local_matrix[i][i];
+            gu[ibeg] -= sign * local_matrix[i][i];
+            //sign *= -1;
+        }
+
+        for (int i = 0; i < k; i++) {//построене для c
+            ibeg = ig[2 * L[i]];
             for (int j = 0; j <= i - 1; j++) {
-                iend = ig[2 * L[i] + 3] - 1;
-                while (jg[ibeg] != L[j] + 2) {
+                iend = ig[2 * L[i] + 1] - 1;
+                while (jg[ibeg] != 2 * L[j] + 1) {
                     med = (ibeg + iend) / 2;
-                    if (jg[med] < L[j] + 2)
+                    if (jg[med] < 2 * L[j] + 1)
                         ibeg = med + 1;
                     else
                         iend = med;
                 }
-                gl[ibeg] -= local_matrix[i][j];
-                gu[ibeg] -= local_matrix[j][i];
+                gl[ibeg] -= sign * local_matrix[i][j];
+                gu[ibeg] += sign * local_matrix[j][i];
+                //sign *= -1;
                 ibeg++;
             }
         }
-
+        for (int i = 0; i < k; i++) {
+            ibeg = ig[2 * L[i] + 1];
+            for (int j = 0; j <= i-1; j++) {
+                iend = ig[2 * L[i] + 2] - 1;
+                while (jg[ibeg] != 2 * L[j]) {
+                    med = (ibeg + iend) / 2;
+                    if (jg[med] < 2 * L[j])
+                        ibeg = med + 1;
+                    else
+                        iend = med;
+                }
+                gl[ibeg] += sign*local_matrix[i][j];
+                gu[ibeg] -= sign*local_matrix[j][i];
+                //sign *= -1;
+                ibeg++;
+            }
+        }
     }
 };

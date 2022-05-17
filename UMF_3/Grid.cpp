@@ -7,21 +7,21 @@ using namespace std;
 
 
 struct sub_area {
-    int nx1; 
+    int nx1;
     int ny1;
-    int nx2;  
+    int nx2;
     int ny2;
-    int ni; 
+    int ni;
 };
 
 
 class Area
 {
-protected: 
-    int nw;  
+protected:
+    int nw;
     vector <double> Xw, Yw;  //координаты подобластей
-    vector <sub_area> Mw;  
-    void read_area() {  
+    vector <sub_area> Mw;
+    void read_area() {
         ifstream area_file;
         area_file.open("Area.txt");
         area_file >> nw;
@@ -45,11 +45,11 @@ protected:
 class Grid : public Area
 {
 private:
-    vector <double> X, Y;  
-    vector <int> IXw, IYw;  
-    vector <int> nx, ny;  
-    vector <double> qx, qy;  
-    int Nx, Ny; 
+    vector <double> X, Y;
+    vector <int> IXw, IYw;
+    vector <int> nx, ny;
+    vector <double> qx, qy;
+    int Nx, Ny;
 
     void read_grid() {
         ifstream GridX, GridY;
@@ -67,7 +67,7 @@ private:
         }
         GridX.close();
         GridY.close();
-        
+
     }
 
 
@@ -90,7 +90,7 @@ private:
 
 
 public:
-    Grid() {   
+    Grid() {
         read_area();
         read_grid();
         Nx = 0;
@@ -105,7 +105,7 @@ public:
         Y.resize(Ny);
         IXw.resize(nw + 1);
         IYw.resize(nw + 1);
-        int ix0 = 0, iy0=0;
+        int ix0 = 0, iy0 = 0;
 
         for (int i = 0; i < nw; i++)
         {
@@ -118,7 +118,7 @@ public:
         IYw[nw] = iy0;
     }
 
-   
+
     int inSubArea(int px, int py) {
         int ixw1, ixw2, iyw1, iyw2;
         for (int i = 0; i < nw; i++) {
@@ -139,6 +139,8 @@ public:
     double getY(int i) { return Y[i]; }
     int getNx() { return Nx; }
     int getNy() { return Ny; }
+    int getIXw(int i) { return IXw[i]; }
+    int getIYw(int i) { return IYw[i]; }
 
-   int global_num(int i, int j) { return j * Nx + i; }
+    int global_num(int i, int j) { return j * Nx + i; }
 };

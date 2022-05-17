@@ -147,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="Area.txt" />
+    <Text Include="bc.txt" />
     <Text Include="GridX.txt" />
     <Text Include="GridY.txt" />
   </ItemGroup>
