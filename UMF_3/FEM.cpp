@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Grid.cpp"
 #include "Solver.h"
 #include "Functi.h"
@@ -21,7 +21,8 @@ public:
         b_vector_assembly_cos(grid);
         b_vector_assembly_sin(grid);
         use_bc1(grid);
-        LOS_solve(q, di, gl, gu, b, ig, jg);
+        regenerate_profile();
+        LU_solve(di, gl_p, gu_p, b, q, ig_p);
     }
 
 
@@ -75,9 +76,10 @@ private:
     vector <double> q;
     vector <double> b;
     vector <int> L;
-    vector <double> U;
-    vector <double> D;
 
+    // ПРОФИЛЬНЫЙ ФОРМАТ
+    std::vector <double> gu_p, gl_p;
+    std::vector <int> ig_p;
 
     void G_matrix_assembly(Grid& grid) {
         double lambd;
@@ -202,7 +204,7 @@ private:
                 g = hx * hy;
                 for (int ik = 0; ik < 4; ik++)
                 {
-                    int elem = 2 * L[ik]  + 1;
+                    int elem = 2 * L[ik] + 1;
                     b[elem] += g * (C[ik][0] * f1 + C[ik][1] * f2 + C[ik][2] * f3 + C[ik][3] * f4);
                 }
             }
@@ -343,8 +345,36 @@ private:
             for (int k = 0; k < list[i].size(); k++, j++)
                 jg[j] = list[i][k];
     }
-
-    //
+    
+    // Перегенерация в профильный формат
+    void regenerate_profile() {
+        int zeros;
+        ig_p = ig;
+        for (int i = 0; i < ig.size() - 1; i++) {
+            for (int j = ig[i]; j < ig[i + 1] - 1; j++) {
+                zeros = jg[j + 1] - jg[j];
+                gl_p.push_back(gl[j]);
+                gu_p.push_back(gu[j]);
+                for (int z = 0; z < zeros - 1; z++) {
+                    gl_p.push_back(0);
+                    gu_p.push_back(0);
+                    for (int ss = i + 1; ss < ig_p.size(); ss++)
+                        ig_p[ss]++;
+                }
+            }
+            if (i != 0) {
+                gl_p.push_back(gl[ig[i + 1] - 1]);
+                gu_p.push_back(gu[ig[i + 1] - 1]);
+                zeros = i - jg[ig[i + 1] - 1];
+                for (int z = 0; z < zeros - 1; z++) {
+                    gl_p.push_back(0);
+                    gu_p.push_back(0);
+                    for (int ss = i + 1; ss < ig_p.size(); ss++)
+                        ig_p[ss]++;
+                }
+            }
+        }
+    }
 
     void add_local_matrix_p(std::vector<std::vector <double>>& local_matrix, int ix, int jy, Grid& grid) {
         int ibeg, iend, med;
@@ -443,7 +473,7 @@ private:
         }
         for (int i = 0; i < k; i++) {
             ibeg = ig[2 * L[i] + 1];
-            for (int j = 0; j <= i-1; j++) {
+            for (int j = 0; j <= i - 1; j++) {
                 iend = ig[2 * L[i] + 2] - 1;
                 while (jg[ibeg] != 2 * L[j]) {
                     med = (ibeg + iend) / 2;
@@ -452,8 +482,8 @@ private:
                     else
                         iend = med;
                 }
-                gl[ibeg] += sign*local_matrix[i][j];
-                gu[ibeg] -= sign*local_matrix[j][i];
+                gl[ibeg] += sign * local_matrix[i][j];
+                gu[ibeg] -= sign * local_matrix[j][i];
                 //sign *= -1;
                 ibeg++;
             }
