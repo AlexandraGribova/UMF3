@@ -1,26 +1,38 @@
 ﻿  FEM.cpp
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(141,13): warning C4101: l: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(177,21): warning C4101: l3: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(177,13): warning C4101: l1: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(177,17): warning C4101: l2: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(177,25): warning C4101: l4: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(311,43): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(326,27): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(331,27): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(343,31): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(102,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(122,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(190,13): warning C4101: l: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(226,21): warning C4101: l3: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(226,13): warning C4101: l1: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(226,17): warning C4101: l2: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(226,25): warning C4101: l4: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(360,43): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(375,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(380,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(392,31): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(515,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(525,45): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(538,45): warning C4018: <: несоответствие типов со знаком и без знака
   Functi.cpp
   Grid.cpp
+  LU.cpp
+C:\Users\sasha\source\repos\UMF_3\UMF_3\LU.cpp(160,20): warning C4018: <: несоответствие типов со знаком и без знака
   Solver.cpp
   UMF_3.cpp
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(141,13): warning C4101: l: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(177,21): warning C4101: l3: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(177,13): warning C4101: l1: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(177,17): warning C4101: l2: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(177,25): warning C4101: l4: неиспользованная локальная переменная
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(311,43): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(326,27): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(331,27): warning C4018: <: несоответствие типов со знаком и без знака
-C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(343,31): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(102,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(122,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(190,13): warning C4101: l: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(226,21): warning C4101: l3: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(226,13): warning C4101: l1: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(226,17): warning C4101: l2: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(226,25): warning C4101: l4: неиспользованная локальная переменная
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(360,43): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(375,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(380,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(392,31): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(515,27): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(525,45): warning C4018: <: несоответствие типов со знаком и без знака
+C:\Users\sasha\source\repos\UMF_3\UMF_3\FEM.cpp(538,45): warning C4018: <: несоответствие типов со знаком и без знака
   Создание кода...
 C:\Users\sasha\source\repos\UMF_3\UMF_3\Grid.cpp(135): warning C4715: Grid::inSubArea: значение возвращается не при всех путях выполнения
 C:\Users\sasha\source\repos\UMF_3\UMF_3\Functi.h(39): warning C4715: Functi_1::us: значение возвращается не при всех путях выполнения

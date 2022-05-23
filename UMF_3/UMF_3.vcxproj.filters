@@ -30,6 +30,9 @@
     <ClCompile Include="Solver.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
+    <ClCompile Include="LU.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="GridX.txt" />
@@ -43,6 +46,9 @@
     </ClInclude>
     <ClInclude Include="Solver.h">
       <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="LU.h">
+      <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@
 #include "Solver.h"
 #include<fstream>
 #include<vector>
+#include <time.h> 
 using namespace std;
 
 int N, maxiter;
@@ -186,7 +187,9 @@ void LOS_DI()
 	vec_DI(p, p);//p=p/di
 	nr = Norm(r);
 	nf = Norm(pr);
-	for (int i = 0; i < maxiter; i++)
+	clock_t tStart = clock();
+	int i;
+	for (i = 0; i < maxiter; i++)
 	{
 		if (nr <= eps * nf)
 			break;
@@ -200,10 +203,12 @@ void LOS_DI()
 		Z_k(boof, b, p, p);//p=boof+b*p  (3.40)
 		nr = Norm(r);
 		cout.setf(ios::scientific);
-		cout << i << "  Условие малости относительной невязки:" << nr / nf << endl;
+		//cout << i << "  Условие малости относительной невязки: " << nr / nf << endl;
 	}
 	nev = _nev();//nev=|f-Ax|/|f|
-	cout << "  Относительная невязка:" << nev << endl;
+	//cout << "  Относительная невязка: " << nev << endl;
+	cout << i << "  Условие малости относительной невязки: " << nr / nf << endl;
+	cout << "  Время LOS: " << (double)(clock() - tStart) / CLOCKS_PER_SEC << endl;
 }
 
 
@@ -215,7 +220,8 @@ void LOS()
 	AVec(z, p);//p0=A*z0
 	nr = Norm(r);
 	nf = Norm(pr);
-	for (int i = 0; i < maxiter; i++)
+	int i;
+	for (i = 0; i < maxiter; i++)
 	{
 		if (nr <= eps * nf)
 			break;
@@ -232,6 +238,7 @@ void LOS()
 			cout << i << " Условие малости относительной невязки:" << nr / nf << endl;
 
 	}
+	cout << "Число итераций: " << i << endl;
 	nev = _nev();//nev=|f-Ax|/|f|
 	cout << "  Относительная невязка:" << nev << endl;
 }
@@ -296,6 +303,6 @@ void LOS_solve(vector<double>& q, vector<double>& _di,
 	int size = ig[N];
 	L.resize(ig[N]);
 	U.resize(ig[N]);
-	LOS();
+	LOS_DI();
 	q = X;
 }

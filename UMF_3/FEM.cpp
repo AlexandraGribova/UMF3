@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Grid.cpp"
 #include "Solver.h"
+#include "LU.h"
 #include "Functi.h"
 #include <iostream>
 #include <iomanip>
@@ -22,7 +23,12 @@ public:
         b_vector_assembly_sin(grid);
         use_bc1(grid);
         LOS_solve(q, di, gl, gu, b, ig, jg);
-    }
+        //inaccuracy_min(q);
+        inaccuracy_max(q);
+        regenerate_profile();
+        LU_solve(di, gl_p, gu_p, b, q, ig_p);
+        inaccuracy_max(q);
+}
 
 
     void print_vector(ofstream& fout, double t2) {
@@ -46,6 +52,11 @@ private:
     std::vector <double> gu, gl;//????
     std::vector <int> ig;
     std::vector <int> jg;
+
+    // ПРОФИЛЬНЫЙ ФОРМАТ
+    std::vector <double> gu_p, gl_p;
+    std::vector <int> ig_p;
+
     vector <vector <double>> G = { {0, 0, 0, 0},
                                    {0, 0, 0, 0},
                                    {0, 0, 0, 0} ,
@@ -78,6 +89,44 @@ private:
     vector <double> U;
     vector <double> D;
 
+    void inaccuracy_max(vector <double> q) {
+        vector <double> q_right;
+        double inaccuracy = 0, sum = 0;
+        for (double k = 0; k < 1.0009; k += 0.0068965517241379309)
+            for (double l = 0; l < 1.0009; l += 0.0068965517241379309)
+            {
+                q_right.push_back(l);
+                q_right.push_back(k);
+            }
+
+        for (int i = 0; i < q.size(); i++)
+        {
+            inaccuracy += abs(q_right[i] - q[i]);
+            sum += q_right[i];
+        }
+
+        cout << "Погрешность: " << (inaccuracy) / (sum) << endl;
+    }
+
+
+    void inaccuracy_min(vector <double> q) {
+        vector <double> q_right;
+        double inaccuracy=0, sum=0;
+        for (double k = 0;k <1.009; k += 0.04)
+            for (double l = 0; l<1.009; l += 0.04)
+            {
+                q_right.push_back(l);
+                q_right.push_back(k);
+            }
+            
+        for (int i = 0; i < q.size(); i++)
+        {
+            inaccuracy += abs(q_right[i] - q[i]);
+            sum += q_right[i];
+        }
+        
+        cout << "Погрешность: " << (inaccuracy)/(sum) << endl;
+    }
 
     void G_matrix_assembly(Grid& grid) {
         double lambd;
@@ -456,6 +505,39 @@ private:
                 gu[ibeg] -= sign*local_matrix[j][i];
                 //sign *= -1;
                 ibeg++;
+            }
+        }
+    }
+    // Перегенерация в профильный формат
+    void regenerate_profile() {
+        int zeros;
+        ig_p = ig;
+        for (int i = 0; i < ig.size() - 1; i++) {
+            for (int j = ig[i]; j < ig[i + 1] - 1; j++) {
+                zeros = jg[j + 1] - jg[j];
+                gl_p.push_back(gl[j]);
+                gu_p.push_back(gu[j]);
+                for (int z = 0; z < zeros - 1; z++) {
+                    gl_p.push_back(0);
+                    gu_p.push_back(0);
+                }
+                if (zeros > 1) {
+                    for (int ss = i + 1; ss < ig_p.size(); ss++)
+                        ig_p[ss] += (zeros - 1);
+                }
+            }
+            if (i != 0) {
+                gl_p.push_back(gl[ig[i + 1] - 1]);
+                gu_p.push_back(gu[ig[i + 1] - 1]);
+                zeros = i - jg[ig[i + 1] - 1];
+                for (int z = 0; z < zeros - 1; z++) {
+                    gl_p.push_back(0);
+                    gu_p.push_back(0);
+                }
+                if (zeros > 1) {
+                    for (int ss = i + 1; ss < ig_p.size(); ss++)
+                        ig_p[ss] += (zeros - 1);
+                }
             }
         }
     }

@@ -142,6 +142,7 @@
     <ClCompile Include="FEM.cpp" />
     <ClCompile Include="Functi.cpp" />
     <ClCompile Include="Grid.cpp" />
+    <ClCompile Include="LU.cpp" />
     <ClCompile Include="Solver.cpp" />
     <ClCompile Include="UMF_3.cpp" />
   </ItemGroup>
@@ -153,6 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Functi.h" />
+    <ClInclude Include="LU.h" />
     <ClInclude Include="Solver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

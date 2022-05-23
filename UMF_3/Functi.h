@@ -3,25 +3,25 @@ class Functi_1
 {
 public:
 
-    double chi(int wi) {//русская буква х
-        return 0;
+    double chi(int wi) {
+        return 10E-11;
     }
-    double w = 1;
+    double w = 10E-4;
 
     double sigma(int wi) {
-        return 1;
+        return 10E+4;
     }
 
     double lambda(int wi) {
-        return 1;
+        return 10E+4;
     }
 
     double fs(int wi, double x, double y) {
-        return - y*w;
+        return sigma(wi)*-y * w-chi(wi)*x*w*w;
     }
 
     double fc(int wi, double x, double y) {
-        return x*w;
+        return sigma(wi)*x * w- chi(wi) * y*w*w;
     }
 
     double us(int wi, double x, double y) {
@@ -30,11 +30,11 @@ public:
         case 1:
             return x;
         case 2:
-            return 3;
+            return 1;
         case 3:
             return x;
         case 4:
-            return 1;
+            return 0;
         }
     }
 
@@ -42,14 +42,13 @@ public:
         switch (wi)
         {
         case 1:
-            return 1;
+            return 0;
         case 2:
             return y;
         case 3:
-            return 3;
+            return 1;
         case 4:
             return y;
         }
     }
 };
-
