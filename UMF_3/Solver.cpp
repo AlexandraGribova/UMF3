@@ -1,301 +1,260 @@
 #include <iostream>
+#include <fstream>
+#include <vector>
 #include<locale.h>
-#include "Solver.h"
-#include<fstream>
-#include<vector>
+#include<iomanip>
+
 using namespace std;
-
-int N, maxiter;
-double eps, nev;
-vector<double> X, d, di, ggl, ggu, pr;
-vector<int> ig, jg;
-vector<double> r, z, p, boof, boof1, L, U;
-
-void r0_s()
+vector<double> DI, AL, AU, V, X;//—Ä–∞–∑–º–µ—Ä–Ω–æ—Å—Ç—å, vec, di,ai,L,U - –≤ —Ç–∞–∫–æ–º –ø–æ—Ä—è–¥–∫–µ
+vector<int>AI;
+int n;
+void input()
 {
-	int i, j, k;
-	int i0, i1;
-	for (i = 0; i < N; i++)
+	string line;
+	ifstream in("input.txt"); // –æ–∫—Ä—ã–≤–∞–µ–º —Ñ–∞–π–ª –¥–ª—è —á—Ç–µ–Ω–∏—è
+	in >> n;
+	V.resize(n);
+	DI.resize(n);
+	AI.resize(n + 1);
+	for (int i = 0; i < n; i++)
+		in >> V[i];
+	for (int i = 0; i < n; i++)
+		in >> DI[i];
+	for (int i = 0; i < n + 1; i++)
+		in >> AI[i];
+	AL.resize(AI[n] - 1);
+	AU.resize(AI[n] - 1);
+	for (int i = 0; i < AI[n] - 1; i++)
+		in >> AL[i];
+	for (int i = 0; i < AI[n] - 1; i++)
+		in >> AU[i];
+	in.close(); // –∑–∞–∫—Ä—ã–≤–∞–µ–º —Ñ–∞–π–ª
+}
+
+void LUdecomp()
+{
+	for (int i = 0; i < n; i++)
 	{
-		i0 = ig[i];
-		i1 = ig[i + 1];
-		r[i] = pr[i] - d[i] * X[i];//f-Ax0
-		for (k = i0; k < i1; k++)
+		int i0 = AI[i] - 1;//–ø–µ—Ä–≤—ã–π —ç–ª-—Ç —Å—Ç—Ä–æ–∫–∏
+		int i1 = AI[i + 1] - 1;//–ø–æ—Å–ª–µ–¥–Ω–∏–π —ç–ª-—Ç —Å—Ç—Ä–æ–∫–∏
+		int j = i - (i1 - i0);//—Å—Ç–æ–ª–±–µ—Ü (–Ω–æ–º–µ—Ä —Ç–µ–∫—É—â–∏–π)
+
+		long double sum_d = 0;
+
+		for (int m = i0; m < i1; m++, j++)
 		{
-			j = jg[k];
-			r[i] -= ggl[k] * X[j];
-			r[j] -= ggu[k] * X[i];
+			long double sum_l = 0;
+			long double sum_u = 0;
+
+			int j0 = AI[j] - 1;//–ø–µ—Ä–≤—ã–π —ç–ª-—Ç —Å—Ç—Ä–æ–∫–∏
+			int j1 = AI[j + 1] - 1;//–ø–æ—Å–ª–µ–¥–Ω–∏–π —ç–ª-—Ç —Å—Ç—Ä–æ–∫–∏
+
+			int mi = i0;
+			int mj = j0;
+
+			int kui = m - i0;//—Å–∫–æ–ª—å–∫–æ
+			int kuj = j1 - j0;//—Å–∫–æ–ª—å–∫–æ
+			int ku = kui - kuj;
+
+			if (ku > 0)
+			{
+				mi += ku;
+			}
+			else
+			{
+				mj -= ku;
+			}
+
+			for (; mi < m; mi++, mj++)
+			{
+				sum_l += AL[mi] * AU[mj];
+				sum_u += AU[mi] * AL[mj];
+			}
+			AL[m] = (AL[m] - sum_l) / DI[j];
+			AU[m] = (AU[m] - sum_u);
+			sum_d += AL[m] * AU[m];
 		}
+
+
+		DI[i] = DI[i] - sum_d;
 	}
 }
-void L_1(vector <double> pr, vector <double>& r)
-{
-	double s;
-	int	i0, i1, k;
-	for (int i = 0; i < N; i++) {
-		s = pr[i];
-		i0 = ig[i];
-		i1 = ig[i + 1];
-		for (k = i0; k < i1; k++)
-			s -= L[k] * r[jg[k]];
-		r[i] = s / di[i];
+
+void Gauss() {
+	ifstream GaussInput("GaussInput.txt");
+	ofstream GaussOutput("GaussOutput.txt");
+	GaussInput >> n;
+	long double** M;
+	long double* F;
+	M = new long double* [n];
+	for (int i = 0; i < n; i++)
+		M[i] = new long double[n];
+	F = new long double[n];
+	for (int i = 0; i < n; i++)
+		for (int j = 0; j < n; j++)
+			GaussInput >> M[i][j];
+	for (int i = 0; i < n; i++)
+		GaussInput >> F[i];
+	for (int i = 1; i < n; i++)
+		for (int j = i; j < n; j++) {
+			long double m = M[j][i - 1] / M[i - 1][i - 1];
+			for (int k = 0; k < n; k++)
+				M[j][k] = M[j][k] - m * M[i - 1][k];
+			F[j] = F[j] - m * F[i - 1];
+		}
+	for (int k = n - 1; k >= 0; k--) {
+		double buf = 0;
+		for (int j = k + 1; j < n; j++)
+			buf += M[k][j] * F[j];
+		F[k] = F[k] - buf;
+		F[k] = F[k] / M[k][k];
 	}
-}
-void U_1(vector <double> pr, vector <double>& z)
-{
-	int	i0, i1, j, k;
-	z = pr;
-	for (int i = N - 1; i >= 0; i--)
+	GaussOutput.setf(ios::scientific);
+	GaussOutput << "\n" << "–†–µ—à–µ–Ω–∏–µ —Å–∏—Å—Ç–µ–º—ã:" << endl;
+	for (int i = 0; i < n; i++)
+		GaussOutput << setprecision(15) << V[i] << endl;
+
+	GaussOutput << "\n" << "–ü–æ–≥—Ä–µ—à–Ω–æ—Å—Ç—å:" << endl;
+	for (int i = 0; i < n; i++)
 	{
-		i0 = ig[i];
-		i1 = ig[i + 1];
-		z[i] = z[i] / di[i];
-		for (k = i0; k < i1; k++)
+		GaussOutput << setprecision(15) << V[i] - i - 1 << endl;
+	}
+
+	delete[]F;
+	for (int i = 0; i < n; i++)
+		delete[]M[i];
+	delete[]M;
+	GaussInput.close();
+	GaussOutput.close();
+
+}
+
+void Gilbert()
+{
+
+	V.resize(n);
+	DI.resize(n);
+	AI.resize(n + 1);
+	AL.resize((n * n - n) / 2);
+	AU.resize((n * n - n) / 2);
+	X.resize(n);
+	int k = 0;
+	for (int i = 1; i < (n + 1), k < (n * n - n) / 2; i++)
+		for (int j = 1; j < i; j++, k++)
+			AL[k] = 1.0 / (i + j - 1);
+	k = 0;
+	for (int j = 1; j < n + 1, k < (n * n - n) / 2; j++)
+		for (int i = 1; i < j; i++, k++)
+			AU[k] = 1.0 / (i + j - 1);
+
+	for (int j = 1; j < n + 1; j++)
+		DI[j - 1] = 1.0 / (2.0 * j - 1);
+
+	AI[0] = AI[1] = 1;
+	for (int j = 1; j < n; j++)
+		AI[j + 1] = AI[j] + j;
+
+	//—É–º–Ω–æ–∂–µ–Ω–∏–µ
+	for (int i = 0; i < n; i++) {
+		for (int k = 1; k <= n; k++)
+			X[k - 1] = k;
+		V[i] = DI[i] * X[i];
+		int i0 = AI[i] - 1;
+		int i1 = AI[i + 1] - 1;
+		int j = i - (i1 - i0);
+		for (int k = i0; k < i1; k++, j++)
 		{
-			j = jg[k];
-			z[j] -= U[k] * z[i];
+			V[i] += AL[k] * X[j];
+			V[j] += AU[k] * X[i];
 		}
 	}
+
+
+
 }
-void p0()
+
+void Find()
 {
-	int i, k, j, i0, i1;
-	for (i = 0; i < N; i++)
+
+	/*Ly=b*/
+	for (int i = 0; i < n; i++)
 	{
-		p[i] = d[i] * z[i];
-		i0 = ig[i];
-		i1 = ig[i + 1];
-		for (k = i0; k < i1; k++)
+		int i0 = AI[i] - 1;//–ø–µ—Ä–≤—ã–π —ç–ª-—Ç —Å—Ç—Ä–æ–∫–∏
+		int i1 = AI[i + 1] - 2;//–ø–æ—Å–ª–µ–¥–Ω–∏–π —ç–ª-—Ç —Å—Ç—Ä–æ–∫–∏
+		int j = i - (i1 + 1 - i0);//—Å—Ç–æ–ª–±–µ—Ü (–Ω–æ–º–µ—Ä —Ç–µ–∫—É—â–∏–π)
+
+		long double sum = 0;
+		if (i0 != i1 + 1)
+			for (int m = i0; m <= i1; m++, j++)
+				sum += AL[m] * V[j];
+		V[i] -= sum;
+	}
+	/*Ux=y*/
+
+
+	for (int i = n - 1; i >= 0; i--)
+	{
+		long double sum = 0;
+		for (int j = i + 1, k = 0; j < n; j++, k++)
 		{
-			j = jg[k];
-			p[i] += ggl[k] * z[j];
-			p[j] += ggu[k] * z[i];
+			int j1 = AI[j + 1] - 2;
+			int j0 = AI[j] - 1;
+			if (j0 <= j1 - k)
+				sum += AU[j1 - k] * V[j];
 		}
+		V[i] = (V[i] - sum) / DI[i];
+
 	}
-}
-double scalar_mult(vector <double> v1, vector <double> v2, int size)
-{
-	double s = 0;
-	for (int i = 0; i < size; i++)
-		s += v1[i] * v2[i];
-	return s;
+
+
+
+
 }
 
-void X_k(double a, vector <double> z)
+void Output()
 {
-	for (int i = 0; i < N; i++)
-		X[i] += a * z[i];
-}
-void R_k(double a, vector <double> p)
-{
-	for (int i = 0; i < N; i++)
-		r[i] -= a * p[i];
-}
-double Norm(vector<double> X)
-{
-	double norma = 0;
-	for (int i = 0; i < N; i++)
+	cout << "–≠–ª–µ–º–µ–Ω—Ç—ã –¥–∏–∞–≥–æ–Ω–∞–ª–∏: ";
+	for (int i = 0; i < n; i++)
 	{
-		norma += X[i] * X[i];
+		cout << DI[i] << " ";
 	}
-	norma = sqrt(norma);
-	return norma;
-}
-
-void AVec(vector <double>& x, vector <double>& y)
-{
-	for (int i = 0; i < N; i++) {
-		y[i] = d[i] * x[i];
-		int i0 = ig[i];
-		int i1 = ig[i + 1];
-		for (int k = i0; k < i1; k++) {
-			int j = jg[k];
-			y[i] += ggl[k] * x[j];
-			y[j] += ggu[k] * x[i];
-		}
-	}
-}
-void Z_k(vector <double> dat, double b, vector <double> d, vector <double>& z)
-{
-	for (int i = 0; i < N; i++)
-		z[i] = dat[i] + b * d[i];
-}
-void vec_DI(vector <double>vec, vector <double>& res)
-{
-	for (int i = 0; i < N; i++)
-		res[i] = vec[i] / d[i];
-}
-double _nev()
-{
-
-	int i, j, k;
-	int i0, i1;
-	for (i = 0; i < N; i++)
+	cout << "\n" << "–≠–ª–µ–º–µ–Ω—Ç—ã –º–∞—Ç—Ä–∏—Ü—ã L: ";
+	for (int i = 0; i < AI[n] - 1; i++)
 	{
-		i0 = ig[i];
-		i1 = ig[i + 1];
-		boof1[i] = pr[i] - d[i] * X[i];//f-Ax0
-		for (k = i0; k < i1; k++)
-		{
-			j = jg[k];
-			boof1[i] -= ggl[k] * X[j];
-			boof1[j] -= ggu[k] * X[i];
-		}
+		cout << AL[i] << " ";
 	}
-	return(Norm(boof1) / Norm(pr));
-}
-void LOS_LU()
-{
-	double a, b, nr, nf;
-	r0_s();//r=f-A*x
-	L_1(r, r);//r=(L^-1)*r
-	U_1(r, z);//z=(U^-1)*r
-	p0();//p=Az
-	L_1(p, p);//p=(L^-1)*p
-	nr = Norm(r);
-	nf = Norm(pr);
-	for (int i = 0; i < maxiter; i++)
+	cout << "\n" << "–≠–ª–µ–º–µ–Ω—Ç—ã –º–∞—Ç—Ä–∏—Ü—ã U: ";
+	for (int i = 0; i < AI[n] - 1; i++)
 	{
-		if (nr <= eps * nf)
-			break;
-		a = scalar_mult(p, r, N) / scalar_mult(p, p, N);//a=(p,r)/(p,p)  (3.35)
-		X_k(a, z);//x=x(k-1)+a*z  (3.36)
-		R_k(a, p);//r=r(k-1)+p*a  (3.37)
-		U_1(r, boof);//boof=(U^-1)*r
-		AVec(boof, boof1);//boof1=A*boof ¬ÒÂ Ò‰ÂÎ‡Ú¸ ÔÓ Ó·‡ÁˆÛ ˝ÚÓÈ ÙÛÌÍˆËË
-		L_1(boof1, boof);//boof=(L^-1)*boof1
-		b = -scalar_mult(p, boof, N) / scalar_mult(p, p, N);//b=-(p,boof)/(p,p)  (3.38)
-		U_1(r, boof1);//boof1=(U^-1)*r
-		Z_k(boof1, b, z, z);//z=boof1+b*z(k-1)
-		Z_k(boof, b, p, p);//p=‰ÎËÌÌÓÂ ‚˚‡ÊÂÌËÂ+b*p  (3.40)
-		nr = Norm(r);
-		cout.setf(ios::scientific);
-		cout << i << "  ”ÒÎÓ‚ËÂ Ï‡ÎÓÒÚË ÓÚÌÓÒËÚÂÎ¸ÌÓÈ ÌÂ‚ˇÁÍË:" << nr / nf << endl;
+		cout << AU[i] << " ";
 	}
-	nev = _nev();//nev=|f-Ax|/|f|
-	cout << "  ŒÚÌÓÒËÚÂÎ¸Ì‡ˇ ÌÂ‚ˇÁÍ‡:" << nev << endl;
-}
 
-void LOS_DI()
-{
-	double a, b, nr, nf;
-	r0_s();//r=f-A*x
-	vec_DI(r, r);//r=r/di
-	z = r;
-	p0();//p=Az
-	vec_DI(p, p);//p=p/di
-	nr = Norm(r);
-	nf = Norm(pr);
-	for (int i = 0; i < maxiter; i++)
+	cout.setf(ios::scientific);
+	cout << "\n" << "–†–µ—à–µ–Ω–∏–µ —Å–∏—Å—Ç–µ–º—ã:" << endl;
+	for (int i = 0; i < n; i++)
+		cout << setprecision(15) << V[i] << endl;
+
+	cout << "\n" << "–ü–æ–≥—Ä–µ—à–Ω–æ—Å—Ç—å:" << endl;
+	for (int i = 0; i < n; i++)
 	{
-		if (nr <= eps * nf)
-			break;
-		a = scalar_mult(p, r, N) / scalar_mult(p, p, N);//a=(p,r)/(p,p)  (3.35)
-		X_k(a, z);//x=x(k-1)+a*z  (3.36)
-		R_k(a, p);//r=r(k-1)+p*a  (3.37)
-		AVec(r, boof);//boof=A*r 
-		vec_DI(boof, boof);
-		b = -scalar_mult(p, boof, N) / scalar_mult(p, p, N);//b=-(p,boof)/(p,p)  (3.38)
-		Z_k(r, b, z, z);//z=r+b*z(k-1)
-		Z_k(boof, b, p, p);//p=boof+b*p  (3.40)
-		nr = Norm(r);
-		cout.setf(ios::scientific);
-		cout << i << "  ”ÒÎÓ‚ËÂ Ï‡ÎÓÒÚË ÓÚÌÓÒËÚÂÎ¸ÌÓÈ ÌÂ‚ˇÁÍË:" << nr / nf << endl;
+		cout << setprecision(15) << V[i] - i - 1 << endl;
 	}
-	nev = _nev();//nev=|f-Ax|/|f|
-	cout << "  ŒÚÌÓÒËÚÂÎ¸Ì‡ˇ ÌÂ‚ˇÁÍ‡:" << nev << endl;
 }
 
-
-void LOS()
-{
-	double a, b, nr, nf;
-	r0_s();//r=f-A*x
-	z = r;//z0=r0
-	AVec(z, p);//p0=A*z0
-	nr = Norm(r);
-	nf = Norm(pr);
-	for (int i = 0; i < maxiter; i++)
-	{
-		if (nr <= eps * nf)
-			break;
-		a = scalar_mult(p, r, N) / scalar_mult(p, p, N);//a=(p,r)/(p,p)  (3.35)
-		X_k(a, z);//x=x(k-1)+a*z  (3.36)
-		R_k(a, p);//r=r(k-1)+p*a  (3.37)
-		AVec(r, boof);//boof=A*r 
-		b = -scalar_mult(p, boof, N) / scalar_mult(p, p, N);//b=-(p,boof)/(p,p)  (3.38)
-		Z_k(r, b, z, z);//z=r+b*z(k-1)
-		Z_k(boof, b, p, p);//p=boof+b*p  (3.40)
-		nr = Norm(r);
-		cout.setf(ios::scientific);
-		if (i % 1000 == 0)
-			cout << i << " ”ÒÎÓ‚ËÂ Ï‡ÎÓÒÚË ÓÚÌÓÒËÚÂÎ¸ÌÓÈ ÌÂ‚ˇÁÍË:" << nr / nf << endl;
-
-	}
-	nev = _nev();//nev=|f-Ax|/|f|
-	cout << "  ŒÚÌÓÒËÚÂÎ¸Ì‡ˇ ÌÂ‚ˇÁÍ‡:" << nev << endl;
-}
-
-void LUS_factorisation()
-{
-	int i, j, k;
-	int i0, i1, ki, kj;
-	double suml, sumu, sumd;
-
-	for (i = 0; i < N; i++)
-	{
-		i0 = ig[i];
-		i1 = ig[i + 1];
-		sumd = 0;
-		for (k = i0; k < i1; k++)
-		{
-			j = jg[k];
-			ki = i0;
-			kj = ig[j];//˜ÚÓ Ú‡ÍÓÂ kj - ÒÓÓÚ‚ÂÚÒ‚Û˛˘ËÈ ÌÓÏÂ ˝ÎÂÏÂÌÚ‡ ‰Îˇ ‰ÓÏÌÓÊÂÌËˇ
-			suml = sumu = 0;
-			while (ki < k)
-				if (jg[kj] == jg[ki]) {
-					sumu += U[ki] * L[kj];
-					suml += U[kj] * L[ki];
-					kj++;
-					ki++;
-				}
-				else
-					if (jg[kj] < jg[ki])
-						kj++;
-					else
-						ki++;
-			U[k] = (ggu[k] - sumu) / di[j];
-			L[k] = (ggl[k] - suml) / di[j];
-			sumd += U[k] * L[k];
-		}
-		di[i] = sqrt(d[i] - sumd);
-	}
-
-}
-void LOS_solve(vector<double>& q, vector<double>& _di,
-	vector<double>& _ggl, vector<double>& _ggu, vector<double>& b, const vector<int>& _ig, const vector<int>& _jg)
+void LU_solve(vector <double> &di, vector <double>& gl, vector <double>& gu,
+	vector <double>& b, vector <double>& q, vector <int>& ig)
 {
 	setlocale(LC_ALL, "Russian");
-	maxiter = 1000;
-	eps = 1e-16;
-	N = _di.size();
-	X = q;
-	d = _di;
-	ggl = _ggl;
-	ggu = _ggu;
-	pr = b;
-	ig = _ig;
-	jg = _jg;
-	di.resize(N);
-	p.resize(N);
-	r.resize(N);
-	z.resize(N);
-	boof.resize(N);
-	boof1.resize(N);
-	int size = ig[N];
-	L.resize(ig[N]);
-	U.resize(ig[N]);
-	LOS();
-	q = X;
+	n = di.size();
+	AI = ig;
+	for (int i = 0; i < AI.size(); i++)
+		AI[i]++;
+	DI = di;
+	AL = gl;
+	AU = gu;
+	V = b;
+	LUdecomp();
+	Find();
+	q = V;
+	//Output();
 }
